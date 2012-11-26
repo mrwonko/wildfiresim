@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="WaldBrandSim" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Build>
+			<Target title="Debug">
+				<Option output="bin\WaldBrandSim_d" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="bin" />
+				<Option object_output="obj\Debug\" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-g" />
+					<Add option="-D_DEBUG" />
+				</Compiler>
+				<Linker>
+					<Add library="luabind-s-d" />
+					<Add library="sfml-graphics-d" />
+					<Add library="sfml-window-d" />
+					<Add library="sfml-system-d" />
+				</Linker>
+			</Target>
+			<Target title="Release">
+				<Option output="bin\WaldBrandSim" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="bin" />
+				<Option object_output="obj\Release\" />
+				<Option type="0" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-O2" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+					<Add library="luabind-s" />
+					<Add library="sfml-graphics" />
+					<Add library="sfml-window" />
+					<Add library="sfml-system" />
+				</Linker>
+			</Target>
+		</Build>
+		<Compiler>
+			<Add option="-Wall" />
+			<Add option="-fexceptions" />
+			<Add directory="include" />
+		</Compiler>
+		<Linker>
+			<Add library="lua" />
+		</Linker>
+		<Unit filename="include\jar\Lua.h" />
+		<Unit filename="include\jar\LuabindSFML.h" />
+		<Unit filename="src\jar\Lua.cpp" />
+		<Unit filename="src\jar\LuabindSFMLDrawable.cpp" />
+		<Unit filename="src\jar\LuabindSFMLImage.cpp" />
+		<Unit filename="src\jar\LuabindSFMLMath.cpp" />
+		<Unit filename="src\jar\LuabindSFMLShape.cpp" />
+		<Unit filename="src\jar\LuabindSFMLSprite.cpp" />
+		<Unit filename="src\jar\LuabindSFMLString.cpp" />
+		<Unit filename="src\jar\LuabindSFMLWindowStuff.cpp" />
+		<Unit filename="src\main.cpp" />
+		<Extensions>
+			<code_completion />
+			<envvars />
+			<debugger />
+			<lib_finder disable_auto="1" />
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>

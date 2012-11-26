@@ -1,0 +1,79 @@
+function Burnable:Calculate(matrix1, matrix2, deltaT)
+	if self.incombustible then
+		return
+	end
+	local metersPerUnit = 2
+	if self.burning then
+		self:IAmBurning()
+		--[[
+		if not self.burnDuration then
+			self:CalculateBurnDuration()
+		end
+		--self.burnDuration = self.burnDuration - deltaT
+		self.mass = self.mass - deltaT*(self.temperature/self.ignitionTemperature)*self.massLossRate
+		--]]
+	else --not burning yet
+		-- wärmeverlust durch kältere umgebung
+		self.deltaTemperature = 1/60 * (clickables.temperature.value - self.temperature) * deltaT
+		--wärmegewinn durch warme Bäume
+		local function calc(matrix)
+			for x=self.x-config.tree_distance,self.x+config.tree_distance do
+				for y=self.y-config.tree_distance, self.y+config.tree_distance do
+					local tree = matrix[y] and matrix[y][x]
+					if tree ~= self and tree and tree.burning then
+						self:AddTemperature(tree, deltaT)
+						--local distance = metersPerUnit*metersPerUnit*((x-self.x)*(x-self.x)+(y-self.y)*(y-self.y))
+						--[[
+						--komplizierte Formel von Bernd - glauben wir ihm einfach.
+						self.deltaTemperature = self.deltaTemperature + math.pow(tree.temperature, 4)*tree.absorption*tree.area*boltzmannkonstante*self.absorption/(self.mass*self.heatCapacity*distance) * deltaT
+						--]]
+						--[[
+						--test: constant delta
+						self.deltaTemperature = self.deltaTemperature + 122 / distance * deltaT
+						--]]
+					end
+				end
+			end
+		end
+		calc(matrix1)
+		calc(matrix2)
+	end
+end
+
+function Burnable:Apply(deltaT)
+	if self.incombustible then
+		return
+	end
+	if self.deltaTemperature and self.deltaTemperature ~= 0 then
+		self.temperature = self.temperature + self.deltaTemperature
+	end
+	
+	local temperatureQuotient = (self.temperature+273)/(self.ignitionTemperature+273)		
+	---[[
+	if self.sprite then
+		local mult = 1-temperatureQuotient
+		mult = mult + .3
+		mult = math.max(mult, 0)
+		mult = math.min(mult, 1)
+		self.sprite:SetColor(sf.Color(255, mult*255, mult*255))
+	end
+	--]]
+		
+	if self.burning then
+		--if self.burnDuration <= 0 then
+		--if self.mass <= 0 then
+		if self.iWillExtinguish then
+			self:ReplaceByScorched()
+		end
+	else --brennt noch nicht
+		-- + 273 ist celsius->kelvin
+		if temperatureQuotient >= 0.8 then
+			local possibility = (math.pow(temperatureQuotient*100 - 80, 2)/900)
+		
+			if math.random() < possibility * deltaT then
+				self.burning = true
+				--self:CalculateBurnDuration()
+			end
+		end
+	end
+end
