@@ -3,6 +3,11 @@ About
 
 This simulation was designed and programmed during the "Mathematische Modellierungswoche" 2010 at the Universität Hamburg by Willi Schinmeyer, Daniel Grigjanis and Bernd Lienau. It simulates wildfires.
 
+Building
+========
+
+Just get CMake, Boost, Luabind, Lua 5.1 and SFML 2 and build away!
+
 Usage
 =====
 
