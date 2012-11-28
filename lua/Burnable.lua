@@ -177,7 +177,7 @@ end
 
 function Burnable:DrawFire(renderTarget)
 	if self.fireSprite and self.burning then
-		renderTarget:Draw(self.fireSprite)
+		renderTarget:DrawAdditive(self.fireSprite)
 	end
 end
 

@@ -40,6 +40,9 @@ Known Bugs
 
 * When you click new, the global configuration is not reset.
 * Not a bug, a missing feature: Resetting the fires. They are saved though, so you are advised to save before burning your forest down.
+* Memory Leak(s?) in manager(s?) - weak keys instead of weak values
+* LineShape not yet implemented
+* Crash on startup (Luabind related (?) - might be a problem on my end.)
 
 Contact
 =======

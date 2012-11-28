@@ -2,52 +2,62 @@
 #include <lua.hpp>
 #include <luabind/class.hpp>
 #include <luabind/operator.hpp>
-#include <SFML/Graphics/String.hpp>
-#include <SFML/System/Unicode.hpp>
+#include <SFML/Graphics/Text.hpp>
+#include <SFML/System/String.hpp>
 
 namespace jar
 {
+
+sf::Font& GetDefaultFont()
+{
+	static sf::Font font;
+	static bool loaded = false;
+	if(!loaded)
+	{
+		loaded = true;
+	}
+	return font;
+}
+
+class TextHelper : public sf::Text
+{
+public:
+	TextHelper() {}
+	TextHelper(const std::string& text, unsigned int characterSize = 15) : sf::Text(sf::String(text), GetDefaultFont(), characterSize) {}
+	void setString(const std::string& text)
+	{
+		sf::Text::setString(text);
+	}
+	const std::string getString()
+	{
+		return sf::Text::getString().toAnsiString();
+	}
+};
 
 void LuabindSFMLString(lua_State* L)
 {
     luabind::module(L, "sf")
     [
-        luabind::class_<sf::Font>("Font")
-            //static functions go in a scope
-            .scope
-            [
-                luabind::def("GetDefaultFont", &sf::Font::GetDefaultFont)
-            ],
 
-        luabind::namespace_("Unicode")
-        [
-            luabind::class_<sf::Unicode::Text>("Text")
-                .def(luabind::constructor<const std::string&>())
-                .def("str", &sf::Unicode::Text::operator std::string) //TODO: Document! Or remember.
-        ],
-
-        luabind::class_<sf::String, sf::Drawable>("String")
+		luabind::class_<TextHelper, luabind::bases<sf::Drawable, sf::Transformable> >("String")
             .enum_("Style")
             [
-                luabind::value("Regular", sf::String::Regular),
-                luabind::value("Bold", sf::String::Bold),
-                luabind::value("Italic", sf::String::Italic),
-                luabind::value("Underlined", sf::String::Underlined)
+                luabind::value("Regular", sf::Text::Regular),
+                luabind::value("Bold", sf::Text::Bold),
+                luabind::value("Italic", sf::Text::Italic),
+                luabind::value("Underlined", sf::Text::Underlined)
             ]
             .def(luabind::constructor<>())
-            .def(luabind::constructor<const sf::Unicode::Text& >())
-            .def(luabind::constructor<const sf::Unicode::Text&, const sf::Font&>())
-            .def(luabind::constructor<const sf::Unicode::Text&, const sf::Font&, float>())
-            .def("GetCharacterPos", &sf::String::GetCharacterPos)
-            .def("GetFont", &sf::String::GetFont)
-            .def("GetSize", &sf::String::GetSize)
-            .def("GetStyle", &sf::String::GetStyle)
-            .def("GetText", &sf::String::GetText)
-            .def("SetFont", &sf::String::SetFont)
-            .def("SetSize", &sf::String::SetSize)
-            .def("SetStyle", &sf::String::SetStyle)
-            .def("SetText", &sf::String::SetText)
-            .def("GetRect", &sf::String::GetRect)
+            .def(luabind::constructor<const sf::String& >())
+            .def(luabind::constructor<const sf::String&, unsigned int>())
+            .def("GetStyle", &sf::Text::getStyle)
+            .def("GetText", &TextHelper::getString)
+			.def("SetScale", (void(sf::Text::*)(const sf::Vector2f&))&sf::Text::setScale)
+            .def("SetStyle", &sf::Text::setStyle)
+            .def("SetText", &TextHelper::setString)
+            .def("GetRect", &sf::Text::getGlobalBounds)
+            .def("SetColor", &sf::Text::setColor)
+            .def("GetColor", &sf::Text::getColor)
     ];
 }
 

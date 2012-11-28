@@ -89,7 +89,7 @@ function TileBar:UpdateTiles()
 		visible = false,
 	}
 	deleter.sprite = sf.Sprite(deleter.image)
-	deleter.sprite:Resize(self.tileSize, self.tileSize)
+	deleter.sprite:Resize(sf.Vector2f(self.tileSize, self.tileSize))
 	
 	self.trees = {
 		deleter,
@@ -117,7 +117,7 @@ function TileBar:UpdateTiles()
 		visible = false,
 	}
 	deleter.sprite = sf.Sprite(deleter.image)
-	deleter.sprite:Resize(self.tileSize, self.tileSize)
+	deleter.sprite:Resize(sf.Vector2f(self.tileSize, self.tileSize))
 	
 	self.grounds = {
 		deleter,
@@ -197,7 +197,7 @@ end
 function TileBar:MousePressed(x, y)
 	--helper function
 	local function CreateRect(position, size)
-		return sf.IntRect(position.x, position.y, position.x+size.x, position.y+size.y)
+		return sf.IntRect(position.x, position.y, size.x, size.y)
 	end
 	
 	--all the things that are to be tested
@@ -323,11 +323,11 @@ function TileBar:OnEvent(event)
 	if event.Type == sf.Event.MouseButtonPressed then
 		if event.MouseButton.Button == 0 then
 			--click in tilebar
-			if sf.IntRect(self.upperLeft.x, self.upperLeft.y, self.lowerRight.x, self.lowerRight.y):Contains(event.MouseButton.X, event.MouseButton.Y) then
+			if sf.IntRect(self.upperLeft.x, self.upperLeft.y, self.lowerRight.x - self.upperLeft.x, self.lowerRight.y - self.upperLeft.y):Contains(event.MouseButton.X, event.MouseButton.Y) then
 				self:MousePressed(event.MouseButton.X, event.MouseButton.Y)
 				return true
 			--click on screen to edit
-			elseif self.selected and sf.IntRect(0, 0, self.lowerRight.x, self.upperLeft.y):Contains(event.MouseButton.X, event.MouseButton.Y) then
+			elseif self.selected and sf.IntRect(0, 0, self.lowerRight.x - self.upperLeft.x, self.upperLeft.y - self.upperLeft.y):Contains(event.MouseButton.X, event.MouseButton.Y) then
 				self.editRect:SetPosition(event.MouseButton.X, event.MouseButton.Y)
 				self.lmbPressed = true
 				if functionMapping[self.selected] then
@@ -394,8 +394,8 @@ function TileBar:OnEvent(event)
 end
 
 function TileBar:SetupEditSprite()
-	self.editSprite:Resize(self.tileSize, self.tileSize)
-	self.editSprite:SetCenter(self.tileSize/2, self.tileSize/2)
+	self.editSprite:Resize(sf.Vector2f(self.tileSize, self.tileSize))
+	self.editSprite:SetCenter(sf.Vector2f(self.tileSize/2, self.tileSize/2))
 end
 
 function TileBar:TreeBurnSelected()

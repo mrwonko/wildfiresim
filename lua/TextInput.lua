@@ -18,7 +18,7 @@ function TextInput:New(info)
 	
 	--create objects
 	obj.text = sf.String()
-	obj.text:SetSize(obj.textSize)
+	obj.text:SetScale(obj.textSize/15, obj.textSize/15)
 	obj.text:SetColor(obj.textColor)
 	obj:UpdateText()
 	obj.text:SetCenter(sf.Vector2f(obj.outline-1, obj.outline+1))

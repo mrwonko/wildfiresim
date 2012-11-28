@@ -3,29 +3,42 @@
 #include <luabind/class.hpp>
 #include <SFML/Graphics/Image.hpp>
 #include <SFML/Graphics/Sprite.hpp>
+#include <SFML/Graphics/Texture.hpp>
 
 namespace jar
 {
+
+void SpriteResize(sf::Sprite& spr, sf::Vector2f size)
+{
+	const sf::Texture* tex = spr.getTexture();
+	assert(tex && "Sprite::Resize called on a sprite with no texture!");
+	sf::Vector2u texSize = tex->getSize();
+	spr.setScale(size.x / texSize.x, size.y / texSize.y);
+}
+
+class SpriteHelper : public sf::Sprite
+{
+public:
+	SpriteHelper() {}
+	SpriteHelper(const sf::Texture& tex) : sf::Sprite(tex) {}
+	SpriteHelper(const sf::Texture& tex, const sf::Vector2f& size) : sf::Sprite(tex) { SpriteResize(*this, size); }
+};
 
 void LuabindSFMLSprite(lua_State* L)
 {
     luabind::module(L, "sf")
     [
-        luabind::class_<sf::Sprite, sf::Drawable>("Sprite")
+        luabind::class_<SpriteHelper, luabind::bases<sf::Drawable, sf::Transformable> >("Sprite")
             .def(luabind::constructor<>())
-            .def(luabind::constructor<const sf::Image&>())
-            .def(luabind::constructor<const sf::Image&, const sf::Vector2f&>())
-            .def(luabind::constructor<const sf::Image&, const sf::Vector2f&, const sf::Vector2f&>())
-            .def(luabind::constructor<const sf::Image&, const sf::Vector2f&, const sf::Vector2f&, float>())
-            .def(luabind::constructor<const sf::Image&, const sf::Vector2f&, const sf::Vector2f&, float, const sf::Color&>())
-            .def("SetImage", &sf::Sprite::SetImage)
-            .def("SetSubRect", &sf::Sprite::SetSubRect)
-            .def("Resize", (void(sf::Sprite::*)(float, float))&sf::Sprite::Resize)
-            .def("Resize", (void(sf::Sprite::*)(const sf::Vector2f&))&sf::Sprite::Resize)
-            .def("FlipX", &sf::Sprite::FlipX)
-            .def("FlipY", &sf::Sprite::FlipY)
-            .def("GetImage", &sf::Sprite::GetImage)
-            .def("GetSubRect", &sf::Sprite::SetSubRect)
+            .def(luabind::constructor<const sf::Texture&>())
+            .def(luabind::constructor<const sf::Texture&, const sf::Vector2f&>())
+            .def("SetImage", &sf::Sprite::setTexture)
+            .def("SetSubRect", &sf::Sprite::setTextureRect)
+            .def("Resize", &SpriteResize)
+            .def("GetImage", &sf::Sprite::getTexture)
+            .def("GetSubRect", &sf::Sprite::setTextureRect)
+            .def("SetColor", &sf::Sprite::setColor)
+            .def("GetColor", &sf::Sprite::getColor)
     ];
 }
 

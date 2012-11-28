@@ -62,7 +62,7 @@ Sim =
 	UpdateView = function(self, halfwidth, halfheight)
 		self.width = 2*halfwidth - config.sidebar_width
 		self.height = 2*halfheight - config.tilebar_height
-		self.view:SetCenter(halfwidth, halfheight)
+		self.view:SetCenter(sv.Vector2f(halfwidth, halfheight))
 		self.view:SetHalfSize(halfwidth, halfheight)
 		self.view:Move(self.offset)
 	end;

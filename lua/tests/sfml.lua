@@ -3,7 +3,7 @@
 --setup
 print("Creating RenderWindow.")
 local app = sf.RenderWindow(sf.VideoMode(800, 600), "SFML says hello!")
-local text = sf.String(sf.Unicode.Text("Ich bin ein Text."))
+local text = sf.String("Ich bin ein Text.")
 local filename = "../textures/test.jpg"
 local img = sf.Image()
 if not img:LoadFromFile(filename) then

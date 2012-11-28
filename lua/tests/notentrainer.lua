@@ -39,7 +39,7 @@ local Entry =
 		object = object or {}
 		object.question = object.question or "<Frage fehlt>";
 		object.answer = object.answer or "";
-		object.questionText = sf.String(sf.Unicode.Text(object.question))
+		object.questionText = sf.String(object.question)
 		if object.image then
 			object.imageSprite = sf.Sprite(ImageManager["../textures/"..object.image], sf.Vector2f(0, 100))
 		end
@@ -230,7 +230,7 @@ function QuestionState:Done()
 	end
 end
 
-startState.drawables[1] = sf.String(sf.Unicode.Text"Willkommen!\nEscape zum Beenden oder was anderes zum Starten.")
+startState.drawables[1] = sf.String("Willkommen!\nEscape zum Beenden oder was anderes zum Starten.")
 function startState:OnStart()
 	correctAnswers = 0
 	workEntries = Shuffle(entries)

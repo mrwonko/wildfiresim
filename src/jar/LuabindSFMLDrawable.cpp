@@ -2,41 +2,65 @@
 #include <lua.hpp>
 #include <luabind/class.hpp>
 #include <SFML/Graphics/Drawable.hpp>
+#include <SFML/Graphics/Transformable.hpp>
 
 namespace jar
 {
+
+	void TransformableSetX(sf::Transformable& t, float x)
+	{
+		sf::Vector2f pos = t.getPosition();
+		pos.x = x;
+		t.setPosition( pos );
+	}
+
+	void TransformableSetY(sf::Transformable& t, float y)
+	{
+		sf::Vector2f pos = t.getPosition();
+		pos.y = y;
+		t.setPosition( pos );
+	}
+
+	void TransformableSetScaleX(sf::Transformable& t, float x)
+	{
+		sf::Vector2f scale = t.getScale();
+		scale.x = x;
+		t.setScale( scale );
+	}
+
+	void TransformableSetScaleY(sf::Transformable& t, float y)
+	{
+		sf::Vector2f scale = t.getScale();
+		scale.y = y;
+		t.setScale( scale );
+	}
 
 void LuabindSFMLDrawable(lua_State* L)
 {
     luabind::module(L, "sf")
     [
+		luabind::class_<sf::Transformable>("Transformable")
+            .def("SetPosition", (void(sf::Transformable::*)(float, float))&sf::Transformable::setPosition)
+            .def("SetPosition", (void(sf::Transformable::*)(const sf::Vector2f&))&sf::Transformable::setPosition)
+            .def("SetX", &TransformableSetX)
+            .def("SetY", &TransformableSetY)
+            .def("SetScale", (void(sf::Transformable::*)(float, float))&sf::Transformable::setScale)
+            .def("SetScale", (void(sf::Transformable::*)(const sf::Vector2f&))&sf::Transformable::setScale)
+            .def("SetCenter", (void(sf::Transformable::*)(float, float))&sf::Transformable::setOrigin)
+            .def("SetCenter", (void(sf::Transformable::*)(const sf::Vector2f&))&sf::Transformable::setOrigin)
+            .def("SetScaleX", &TransformableSetScaleX)
+            .def("SetScaleY", &TransformableSetScaleY)
+            .def("SetRotation", &sf::Transformable::setRotation)
+            .def("GetPosition", &sf::Transformable::getPosition)
+            .def("GetScale", &sf::Transformable::getScale)
+            .def("GetCenter", &sf::Transformable::getOrigin)
+            .def("GetRotation", &sf::Transformable::getRotation)
+            .def("Move", (void(sf::Transformable::*)(float, float))&sf::Transformable::move)
+            .def("Move", (void(sf::Transformable::*)(const sf::Vector2f&))&sf::Transformable::move)
+            .def("Scale", (void(sf::Transformable::*)(float, float))&sf::Transformable::scale)
+            .def("Scale", (void(sf::Transformable::*)(const sf::Vector2f&))&sf::Transformable::scale)
+            .def("Rotate", &sf::Transformable::rotate),
         luabind::class_<sf::Drawable>("Drawable")
-            .def("SetPosition", (void(sf::Drawable::*)(float, float))&sf::Drawable::SetPosition)
-            .def("SetPosition", (void(sf::Drawable::*)(const sf::Vector2f&))&sf::Drawable::SetPosition)
-            .def("SetX", &sf::Drawable::SetX)
-            .def("SetY", &sf::Drawable::SetY)
-            .def("SetScale", (void(sf::Drawable::*)(float, float))&sf::Drawable::SetScale)
-            .def("SetScale", (void(sf::Drawable::*)(const sf::Vector2f&))&sf::Drawable::SetScale)
-            .def("SetCenter", (void(sf::Drawable::*)(float, float))&sf::Drawable::SetCenter)
-            .def("SetCenter", (void(sf::Drawable::*)(const sf::Vector2f&))&sf::Drawable::SetCenter)
-            .def("SetScaleX", &sf::Drawable::SetScaleX)
-            .def("SetScaleY", &sf::Drawable::SetScaleY)
-            .def("SetRotation", &sf::Drawable::SetRotation)
-            .def("SetColor", &sf::Drawable::SetColor)
-            .def("SetBlendMode", &sf::Drawable::SetBlendMode)
-            .def("GetPosition", &sf::Drawable::GetPosition)
-            .def("GetScale", &sf::Drawable::GetScale)
-            .def("GetCenter", &sf::Drawable::GetCenter)
-            .def("GetRotation", &sf::Drawable::GetRotation)
-            .def("GetColor", &sf::Drawable::GetColor)
-            .def("GetBlendMode", &sf::Drawable::GetBlendMode)
-            .def("Move", (void(sf::Drawable::*)(float, float))&sf::Drawable::Move)
-            .def("Move", (void(sf::Drawable::*)(const sf::Vector2f&))&sf::Drawable::Move)
-            .def("Scale", (void(sf::Drawable::*)(float, float))&sf::Drawable::Scale)
-            .def("Scale", (void(sf::Drawable::*)(const sf::Vector2f&))&sf::Drawable::Scale)
-            .def("Rotate", &sf::Drawable::Rotate)
-            .def("TransformToLocal", &sf::Drawable::TransformToLocal)
-            .def("TransformToGlobal", &sf::Drawable::TransformToGlobal)
     ];
 }
 

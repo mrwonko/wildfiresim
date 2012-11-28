@@ -9,7 +9,7 @@ function Text:New(info)
 	obj.textSize = obj.textSize or 15
 	--create objects
 	obj.text = sf.String()
-	obj.text:SetSize(obj.textSize)
+	obj.text:SetScale(obj.textSize/15)
 	obj.text:SetColor(obj.color)
 	obj:SetText(text)
 	obj:SetPosition(obj.position)
@@ -18,7 +18,7 @@ end
 
 function Text:SetText(text)
 	self.text:SetText(sf.Unicode.Text(text))
-	self.text:SetCenter(sf.Vector2f(self.text:GetRect():GetWidth()/2, self.text:GetRect():GetHeight()/2)-self.size/2)
+	self.text:SetCenter(sf.Vector2f(self.text:GetRect().width()/2, self.text:GetRect().height()/2)-self.size/2)
 end
 
 function Text:Draw(renderTarget)

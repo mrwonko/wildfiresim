@@ -13,7 +13,7 @@ function Button:New(info)
 	--create objects
 	local text = obj.text or ""
 	obj.text = sf.String()
-	obj.text:SetSize(obj.textSize)
+	obj.text:SetScale(obj.textSize/15)
 	obj.text:SetColor(obj.textColor)
 	obj:SetText(text)
 	obj.shape = sf.Shape.Rectangle(sf.Vector2f(0, 0), obj.size, obj.color, obj.outline, obj.outlineColor)
@@ -27,7 +27,7 @@ end
 
 function Button:SetText(text)
 	self.text:SetText(sf.Unicode.Text(text))
-	self.text:SetCenter(sf.Vector2f(self.text:GetRect():GetWidth()/2-self.size.x/2, self.outline))
+	self.text:SetCenter(sf.Vector2f(self.text:GetRect().width()/2-self.size.x/2, self.outline))
 end
 
 function Button:Draw(renderTarget)

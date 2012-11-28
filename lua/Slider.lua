@@ -22,7 +22,7 @@ function Slider:New(info)
 	obj.textSuffix = obj.text or ""
 	--create objects
 	obj.text = sf.String()
-	obj.text:SetSize(obj.textSize)
+	obj.text:SetScale(obj.textSize/15)
 	obj.text:SetColor(sf.Color(obj.outlineColor.r*.5+obj.color.r*.5, obj.outlineColor.g*.5+obj.color.g*.5, obj.outlineColor.b*.5+obj.color.b*.5))
 	obj:SetText(""..obj.value..obj.textSuffix)
 	obj.rect = sf.Shape.Rectangle(sf.Vector2f(0, 0), obj.size, obj.color, obj.outline, obj.outlineColor)
@@ -53,7 +53,7 @@ end
 
 function Slider:SetText(text)
 	self.text:SetText(sf.Unicode.Text(text))
-	self.text:SetCenter(sf.Vector2f(self.text:GetRect():GetWidth()/2, self.text:GetRect():GetHeight()/2)-self.size/2)
+	self.text:SetCenter(sf.Vector2f(self.text:GetRect().width()/2, self.text:GetRect().height/2)-self.size/2)
 end
 
 function Slider:Draw(renderTarget)

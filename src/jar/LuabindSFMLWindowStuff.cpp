@@ -3,23 +3,115 @@
 #include <luabind/class.hpp>
 #include <luabind/operator.hpp>
 #include <SFML/Window/Event.hpp>
-#include <SFML/Window/WindowSettings.hpp>
 #include <SFML/Window/Window.hpp>
-#include <SFML/Window/Input.hpp>
 #include <SFML/Graphics/View.hpp>
 #include <SFML/Window/VideoMode.hpp>
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/Graphics/RenderWindow.hpp>
 #include <SFML/Graphics/Drawable.hpp>
+#include <map>
 
 namespace jar
 {
+
+void RenderTargetDrawDefault(sf::RenderTarget& target, const sf::Drawable& drawable)
+{
+	target.draw(drawable);
+}
+
+void RenderTargetDrawAdditive(sf::RenderTarget& target, const sf::Drawable& drawable)
+{
+	sf::RenderStates states;
+	states.blendMode = sf::BlendAdd;
+	target.draw(drawable, states);
+}
+
+void RenderTargetDrawAlpha(sf::RenderTarget& target, const sf::Drawable& drawable)
+{
+	sf::RenderStates states;
+	states.blendMode = sf::BlendAlpha;
+	target.draw(drawable, states);
+}
 
 class luabind_dummy_style{};
 class luabind_dummy_mouse{};
 class luabind_dummy_joy{};
 class luabind_dummy_key{};
 class luabind_dummy_blend{};
+
+class Input
+{
+public:
+	Input(const sf::Window& window) : mWindow(window) {}
+    bool IsKeyDown(sf::Keyboard::Key key)
+	{
+		return sf::Keyboard::isKeyPressed(key);
+	}
+    int GetMouseX()
+	{
+		return sf::Mouse::getPosition(mWindow).x;
+	}
+    int GetMouseY()
+	{
+		return sf::Mouse::getPosition(mWindow).y;
+	}
+    bool IsMouseButtonDown(sf::Mouse::Button button)
+	{
+		return sf::Mouse::isButtonPressed(button);
+	}
+private:
+	const sf::Window& mWindow;
+};
+
+Input WindowGetInput(const sf::Window& window)
+{
+	return Input(window);
+};
+
+void WindowSetCursorPosition(const sf::Window& window, int posX, int posY)
+{
+	sf::Mouse::setPosition(sf::Vector2i(posX, posY), window);
+}
+
+void ViewSetHalfSize(sf::View& view, const sf::Vector2f& halfSize)
+{
+	view.setSize(halfSize * 2.f);
+}
+
+void ViewSetHalfSize(sf::View& view, const float halfSizeX, const float halfSizeY)
+{
+	view.setSize(halfSizeX * 2.f, halfSizeY * 2.f);
+}
+
+sf::Vector2f ViewGetHalfSize(const sf::View& view)
+{
+	return view.getSize() / 2.f;
+}
+
+typedef std::map<const sf::Window*, sf::Clock> WindowClocks;
+WindowClocks& GetWindowClocks()
+{
+	static WindowClocks s_windowClocks;
+	return s_windowClocks;
+}
+
+float WindowGetFrameTime(const sf::Window& window)
+{
+	if( GetWindowClocks().find(&window) == GetWindowClocks().end() )
+	{
+		return 0.f;
+	}
+	else
+	{
+		return GetWindowClocks()[&window].getElapsedTime().asSeconds();
+	}
+}
+
+void WindowShow(sf::Window& window)
+{
+	window.display();
+	GetWindowClocks()[&window] = sf::Clock();
+}
 
 void LuabindSFMLWindowStuff(lua_State* L)
 {
@@ -38,10 +130,10 @@ void LuabindSFMLWindowStuff(lua_State* L)
         luabind::class_<luabind_dummy_blend>("Blend")
             .enum_("Mode")
             [
-                luabind::value("Alpha", (unsigned long)sf::Blend::Alpha),
-                luabind::value("Add", (unsigned long)sf::Blend::Add),
-                luabind::value("Multiply", (unsigned long)sf::Blend::Multiply),
-                luabind::value("None", (unsigned long)sf::Blend::None)
+                luabind::value("Alpha", (unsigned long)sf::BlendAlpha),
+                luabind::value("Add", (unsigned long)sf::BlendAdd),
+                luabind::value("Multiply", (unsigned long)sf::BlendMultiply),
+                luabind::value("None", (unsigned long)sf::BlendNone)
             ],
 
         luabind::class_<luabind_dummy_mouse>("Mouse")
@@ -57,174 +149,175 @@ void LuabindSFMLWindowStuff(lua_State* L)
         luabind::class_<luabind_dummy_joy>("Joy")
             .enum_("Axis")
             [
-                luabind::value("AxisX", (unsigned long)sf::Joy::AxisX),
-                luabind::value("AxisY", (unsigned long)sf::Joy::AxisY),
-                luabind::value("AxisZ", (unsigned long)sf::Joy::AxisZ),
-                luabind::value("AxisR", (unsigned long)sf::Joy::AxisR),
-                luabind::value("AxisU", (unsigned long)sf::Joy::AxisU),
-                luabind::value("AxisV", (unsigned long)sf::Joy::AxisV),
-                luabind::value("AxisPOV", (unsigned long)sf::Joy::AxisPOV)
+				luabind::value("AxisX", (unsigned long)sf::Joystick::Axis::X),
+                luabind::value("AxisY", (unsigned long)sf::Joystick::Axis::Y),
+                luabind::value("AxisZ", (unsigned long)sf::Joystick::Axis::Z),
+                luabind::value("AxisR", (unsigned long)sf::Joystick::Axis::R),
+                luabind::value("AxisU", (unsigned long)sf::Joystick::Axis::U),
+                luabind::value("AxisV", (unsigned long)sf::Joystick::Axis::V),
+				luabind::value("AxisPovX", (unsigned long)sf::Joystick::Axis::PovX),
+				luabind::value("AxisPovY", (unsigned long)sf::Joystick::Axis::PovY)
             ]
             .enum_("noname")
             [
-                luabind::value("Count", (unsigned long)sf::Joy::Count),
-                luabind::value("ButtonCount", (unsigned long)sf::Joy::ButtonCount)
+                luabind::value("Count", (unsigned long)sf::Joystick::Count),
+                luabind::value("ButtonCount", (unsigned long)sf::Joystick::ButtonCount)
             ],
 
         luabind::class_<luabind_dummy_key>("Key")
             .enum_("Code")
             [
-                luabind::value("A", sf::Key::A),
-                luabind::value("B", sf::Key::B),
-                luabind::value("C", sf::Key::C),
-                luabind::value("D", sf::Key::D),
-                luabind::value("E", sf::Key::E),
-                luabind::value("F", sf::Key::F),
-                luabind::value("G", sf::Key::G),
-                luabind::value("H", sf::Key::H),
-                luabind::value("I", sf::Key::I),
-                luabind::value("J", sf::Key::J),
-                luabind::value("K", sf::Key::K),
-                luabind::value("L", sf::Key::L),
-                luabind::value("M", sf::Key::M),
-                luabind::value("N", sf::Key::N),
-                luabind::value("O", sf::Key::O),
-                luabind::value("P", sf::Key::P),
-                luabind::value("Q", sf::Key::Q),
-                luabind::value("R", sf::Key::R),
-                luabind::value("S", sf::Key::S),
-                luabind::value("T", sf::Key::T),
-                luabind::value("U", sf::Key::U),
-                luabind::value("V", sf::Key::V),
-                luabind::value("W", sf::Key::W),
-                luabind::value("X", sf::Key::X),
-                luabind::value("Y", sf::Key::Y),
-                luabind::value("Z", sf::Key::Z),
-                luabind::value("Num0", sf::Key::Num0),
-                luabind::value("Num1", sf::Key::Num1),
-                luabind::value("Num2", sf::Key::Num2),
-                luabind::value("Num3", sf::Key::Num3),
-                luabind::value("Num4", sf::Key::Num4),
-                luabind::value("Num5", sf::Key::Num5),
-                luabind::value("Num6", sf::Key::Num6),
-                luabind::value("Num7", sf::Key::Num7),
-                luabind::value("Num8", sf::Key::Num8),
-                luabind::value("Num9", sf::Key::Num9),
-                luabind::value("Escape", sf::Key::Escape),
-                luabind::value("LControl", sf::Key::LControl),
-                luabind::value("LShift", sf::Key::LShift),
-                luabind::value("LAlt", sf::Key::LAlt),
-                luabind::value("LSystem", sf::Key::LSystem),
-                luabind::value("RControl", sf::Key::RControl),
-                luabind::value("RShift", sf::Key::RShift),
-                luabind::value("RAlt", sf::Key::RAlt),
-                luabind::value("RSystem", sf::Key::RSystem),
-                luabind::value("Menu", sf::Key::Menu),
-                luabind::value("LBracket", sf::Key::LBracket),
-                luabind::value("RBracket", sf::Key::RBracket),
-                luabind::value("SemiColon", sf::Key::SemiColon),
-                luabind::value("Comma", sf::Key::Comma),
-                luabind::value("Period", sf::Key::Period),
-                luabind::value("Quote", sf::Key::Quote),
-                luabind::value("Slash", sf::Key::Slash),
-                luabind::value("BackSlash", sf::Key::BackSlash),
-                luabind::value("Tilde", sf::Key::Tilde),
-                luabind::value("Equal", sf::Key::Equal),
-                luabind::value("Dash", sf::Key::Dash),
-                luabind::value("Space", sf::Key::Space),
-                luabind::value("Return", sf::Key::Return),
-                luabind::value("Back", sf::Key::Back),
-                luabind::value("Tab", sf::Key::Tab),
-                luabind::value("PageUp", sf::Key::PageUp),
-                luabind::value("PageDown", sf::Key::PageDown),
-                luabind::value("End", sf::Key::End),
-                luabind::value("Home", sf::Key::Home),
-                luabind::value("Insert", sf::Key::Insert),
-                luabind::value("Delete", sf::Key::Delete),
-                luabind::value("Add", sf::Key::Add),
-                luabind::value("Subtract", sf::Key::Subtract),
-                luabind::value("Multiply", sf::Key::Multiply),
-                luabind::value("Divide", sf::Key::Divide),
-                luabind::value("Left", sf::Key::Left),
-                luabind::value("Right", sf::Key::Right),
-                luabind::value("Up", sf::Key::Up),
-                luabind::value("Down", sf::Key::Down),
-                luabind::value("Numpad0", sf::Key::Numpad0),
-                luabind::value("Numpad1", sf::Key::Numpad1),
-                luabind::value("Numpad2", sf::Key::Numpad2),
-                luabind::value("Numpad3", sf::Key::Numpad3),
-                luabind::value("Numpad4", sf::Key::Numpad4),
-                luabind::value("Numpad5", sf::Key::Numpad5),
-                luabind::value("Numpad6", sf::Key::Numpad6),
-                luabind::value("Numpad7", sf::Key::Numpad7),
-                luabind::value("Numpad8", sf::Key::Numpad8),
-                luabind::value("Numpad9", sf::Key::Numpad9),
-                luabind::value("F1", sf::Key::F1),
-                luabind::value("F2", sf::Key::F2),
-                luabind::value("F3", sf::Key::F3),
-                luabind::value("F4", sf::Key::F4),
-                luabind::value("F5", sf::Key::F5),
-                luabind::value("F6", sf::Key::F6),
-                luabind::value("F7", sf::Key::F7),
-                luabind::value("F8", sf::Key::F8),
-                luabind::value("F9", sf::Key::F9),
-                luabind::value("F10", sf::Key::F10),
-                luabind::value("F11", sf::Key::F11),
-                luabind::value("F12", sf::Key::F12),
-                luabind::value("F13", sf::Key::F13),
-                luabind::value("F14", sf::Key::F14),
-                luabind::value("F15", sf::Key::F15),
-                luabind::value("Pause", sf::Key::Pause)
+                luabind::value("A", sf::Keyboard::A),
+                luabind::value("B", sf::Keyboard::B),
+                luabind::value("C", sf::Keyboard::C),
+                luabind::value("D", sf::Keyboard::D),
+                luabind::value("E", sf::Keyboard::E),
+                luabind::value("F", sf::Keyboard::F),
+                luabind::value("G", sf::Keyboard::G),
+                luabind::value("H", sf::Keyboard::H),
+                luabind::value("I", sf::Keyboard::I),
+                luabind::value("J", sf::Keyboard::J),
+                luabind::value("K", sf::Keyboard::K),
+                luabind::value("L", sf::Keyboard::L),
+                luabind::value("M", sf::Keyboard::M),
+                luabind::value("N", sf::Keyboard::N),
+                luabind::value("O", sf::Keyboard::O),
+                luabind::value("P", sf::Keyboard::P),
+                luabind::value("Q", sf::Keyboard::Q),
+                luabind::value("R", sf::Keyboard::R),
+                luabind::value("S", sf::Keyboard::S),
+                luabind::value("T", sf::Keyboard::T),
+                luabind::value("U", sf::Keyboard::U),
+                luabind::value("V", sf::Keyboard::V),
+                luabind::value("W", sf::Keyboard::W),
+                luabind::value("X", sf::Keyboard::X),
+                luabind::value("Y", sf::Keyboard::Y),
+                luabind::value("Z", sf::Keyboard::Z),
+                luabind::value("Num0", sf::Keyboard::Num0),
+                luabind::value("Num1", sf::Keyboard::Num1),
+                luabind::value("Num2", sf::Keyboard::Num2),
+                luabind::value("Num3", sf::Keyboard::Num3),
+                luabind::value("Num4", sf::Keyboard::Num4),
+                luabind::value("Num5", sf::Keyboard::Num5),
+                luabind::value("Num6", sf::Keyboard::Num6),
+                luabind::value("Num7", sf::Keyboard::Num7),
+                luabind::value("Num8", sf::Keyboard::Num8),
+                luabind::value("Num9", sf::Keyboard::Num9),
+                luabind::value("Escape", sf::Keyboard::Escape),
+                luabind::value("LControl", sf::Keyboard::LControl),
+                luabind::value("LShift", sf::Keyboard::LShift),
+                luabind::value("LAlt", sf::Keyboard::LAlt),
+                luabind::value("LSystem", sf::Keyboard::LSystem),
+                luabind::value("RControl", sf::Keyboard::RControl),
+                luabind::value("RShift", sf::Keyboard::RShift),
+                luabind::value("RAlt", sf::Keyboard::RAlt),
+                luabind::value("RSystem", sf::Keyboard::RSystem),
+                luabind::value("Menu", sf::Keyboard::Menu),
+                luabind::value("LBracket", sf::Keyboard::LBracket),
+                luabind::value("RBracket", sf::Keyboard::RBracket),
+                luabind::value("SemiColon", sf::Keyboard::SemiColon),
+                luabind::value("Comma", sf::Keyboard::Comma),
+                luabind::value("Period", sf::Keyboard::Period),
+                luabind::value("Quote", sf::Keyboard::Quote),
+                luabind::value("Slash", sf::Keyboard::Slash),
+                luabind::value("BackSlash", sf::Keyboard::BackSlash),
+                luabind::value("Tilde", sf::Keyboard::Tilde),
+                luabind::value("Equal", sf::Keyboard::Equal),
+                luabind::value("Dash", sf::Keyboard::Dash),
+                luabind::value("Space", sf::Keyboard::Space),
+                luabind::value("Return", sf::Keyboard::Return),
+                luabind::value("Back", sf::Keyboard::BackSpace),
+                luabind::value("Tab", sf::Keyboard::Tab),
+                luabind::value("PageUp", sf::Keyboard::PageUp),
+                luabind::value("PageDown", sf::Keyboard::PageDown),
+                luabind::value("End", sf::Keyboard::End),
+                luabind::value("Home", sf::Keyboard::Home),
+                luabind::value("Insert", sf::Keyboard::Insert),
+                luabind::value("Delete", sf::Keyboard::Delete),
+                luabind::value("Add", sf::Keyboard::Add),
+                luabind::value("Subtract", sf::Keyboard::Subtract),
+                luabind::value("Multiply", sf::Keyboard::Multiply),
+                luabind::value("Divide", sf::Keyboard::Divide),
+                luabind::value("Left", sf::Keyboard::Left),
+                luabind::value("Right", sf::Keyboard::Right),
+                luabind::value("Up", sf::Keyboard::Up),
+                luabind::value("Down", sf::Keyboard::Down),
+                luabind::value("Numpad0", sf::Keyboard::Numpad0),
+                luabind::value("Numpad1", sf::Keyboard::Numpad1),
+                luabind::value("Numpad2", sf::Keyboard::Numpad2),
+                luabind::value("Numpad3", sf::Keyboard::Numpad3),
+                luabind::value("Numpad4", sf::Keyboard::Numpad4),
+                luabind::value("Numpad5", sf::Keyboard::Numpad5),
+                luabind::value("Numpad6", sf::Keyboard::Numpad6),
+                luabind::value("Numpad7", sf::Keyboard::Numpad7),
+                luabind::value("Numpad8", sf::Keyboard::Numpad8),
+                luabind::value("Numpad9", sf::Keyboard::Numpad9),
+                luabind::value("F1", sf::Keyboard::F1),
+                luabind::value("F2", sf::Keyboard::F2),
+                luabind::value("F3", sf::Keyboard::F3),
+                luabind::value("F4", sf::Keyboard::F4),
+                luabind::value("F5", sf::Keyboard::F5),
+                luabind::value("F6", sf::Keyboard::F6),
+                luabind::value("F7", sf::Keyboard::F7),
+                luabind::value("F8", sf::Keyboard::F8),
+                luabind::value("F9", sf::Keyboard::F9),
+                luabind::value("F10", sf::Keyboard::F10),
+                luabind::value("F11", sf::Keyboard::F11),
+                luabind::value("F12", sf::Keyboard::F12),
+                luabind::value("F13", sf::Keyboard::F13),
+                luabind::value("F14", sf::Keyboard::F14),
+                luabind::value("F15", sf::Keyboard::F15),
+                luabind::value("Pause", sf::Keyboard::Pause)
             ],
 
         luabind::class_<sf::Event>("Event")
             .def(luabind::constructor<>())
-            .def_readonly("Type", &sf::Event::Type)
+            .def_readonly("Type", &sf::Event::type)
             //the event union - depends on Type.
-            .def_readonly("Text", &sf::Event::Text)
-            .def_readonly("Size", &sf::Event::Size)
-            .def_readonly("MouseWheel", &sf::Event::MouseWheel)
-            .def_readonly("MouseMove", &sf::Event::MouseMove)
-            .def_readonly("MouseButton", &sf::Event::MouseButton)
-            .def_readonly("JoyMove", &sf::Event::JoyMove)
-            .def_readonly("JoyButton", &sf::Event::JoyButton)
-            .def_readonly("Key", &sf::Event::Key)
+            .def_readonly("Text", &sf::Event::text)
+            .def_readonly("Size", &sf::Event::size)
+            .def_readonly("MouseWheel", &sf::Event::mouseWheel)
+            .def_readonly("MouseMove", &sf::Event::mouseMove)
+            .def_readonly("MouseButton", &sf::Event::mouseButton)
+            .def_readonly("JoyMove", &sf::Event::joystickMove)
+			.def_readonly("JoyButton", &sf::Event::joystickButton)
+            .def_readonly("Key", &sf::Event::key)
             //nested classes
             .scope
             [
-                luabind::class_<sf::Event::JoyButtonEvent>("JoyButtonEvent")
-                    .def_readonly("Button", &sf::Event::JoyButtonEvent::Button)
-                    .def_readonly("JoystickId", &sf::Event::JoyButtonEvent::JoystickId),
+                luabind::class_<sf::Event::JoystickButtonEvent>("JoyButtonEvent")
+                    .def_readonly("Button", &sf::Event::JoystickButtonEvent::button)
+                    .def_readonly("JoystickId", &sf::Event::JoystickButtonEvent::joystickId),
 
-                luabind::class_<sf::Event::JoyMoveEvent>("JoyMoveEvent")
-                    .def_readonly("Axis", &sf::Event::JoyMoveEvent::Axis)
-                    .def_readonly("Position", &sf::Event::JoyMoveEvent::Position)
-                    .def_readonly("JoystickId", &sf::Event::JoyMoveEvent::JoystickId),
+                luabind::class_<sf::Event::JoystickMoveEvent>("JoyMoveEvent")
+                    .def_readonly("Axis", &sf::Event::JoystickMoveEvent::axis)
+                    .def_readonly("Position", &sf::Event::JoystickMoveEvent::position)
+                    .def_readonly("JoystickId", &sf::Event::JoystickMoveEvent::joystickId),
 
                 luabind::class_<sf::Event::KeyEvent>("KeyEvent")
-                    .def_readonly("Alt", &sf::Event::KeyEvent::Alt)
-                    .def_readonly("Code", &sf::Event::KeyEvent::Code)
-                    .def_readonly("Control", &sf::Event::KeyEvent::Control)
-                    .def_readonly("Shift", &sf::Event::KeyEvent::Shift),
+                    .def_readonly("Alt", &sf::Event::KeyEvent::alt)
+                    .def_readonly("Code", &sf::Event::KeyEvent::code)
+                    .def_readonly("Control", &sf::Event::KeyEvent::control)
+                    .def_readonly("Shift", &sf::Event::KeyEvent::shift),
 
                 luabind::class_<sf::Event::MouseButtonEvent>("MouseButtonEvent")
-                    .def_readonly("Button", &sf::Event::MouseButtonEvent::Button)
-                    .def_readonly("X", &sf::Event::MouseButtonEvent::X)
-                    .def_readonly("Y", &sf::Event::MouseButtonEvent::Y),
+                    .def_readonly("Button", &sf::Event::MouseButtonEvent::button)
+                    .def_readonly("X", &sf::Event::MouseButtonEvent::x)
+                    .def_readonly("Y", &sf::Event::MouseButtonEvent::y),
 
                 luabind::class_<sf::Event::MouseMoveEvent>("MouseMoveEvent")
-                    .def_readonly("X", &sf::Event::MouseMoveEvent::X)
-                    .def_readonly("Y", &sf::Event::MouseMoveEvent::Y),
+                    .def_readonly("X", &sf::Event::MouseMoveEvent::x)
+                    .def_readonly("Y", &sf::Event::MouseMoveEvent::y),
 
                 luabind::class_<sf::Event::MouseWheelEvent>("MouseWheelEvent")
-                    .def_readonly("Delta", &sf::Event::MouseWheelEvent::Delta),
+                    .def_readonly("Delta", &sf::Event::MouseWheelEvent::delta),
 
                 luabind::class_<sf::Event::SizeEvent>("SizeEvent")
-                    .def_readonly("Height", &sf::Event::SizeEvent::Height)
-                    .def_readonly("Width", &sf::Event::SizeEvent::Width),
+                    .def_readonly("Height", &sf::Event::SizeEvent::height)
+                    .def_readonly("Width", &sf::Event::SizeEvent::width),
 
                 luabind::class_<sf::Event::TextEvent>("TextEvent")
-                    .def_readonly("Unicode", &sf::Event::TextEvent::Unicode)
+                    .def_readonly("Unicode", &sf::Event::TextEvent::unicode)
             ]
             .enum_("EventType")
             [
@@ -241,88 +334,77 @@ void LuabindSFMLWindowStuff(lua_State* L)
                 luabind::value("MouseMoved", (unsigned long)sf::Event::MouseMoved),
                 luabind::value("MouseEntered", (unsigned long)sf::Event::MouseEntered),
                 luabind::value("MouseLeft", (unsigned long)sf::Event::MouseLeft),
-                luabind::value("JoyButtonPressed", (unsigned long)sf::Event::JoyButtonPressed),
-                luabind::value("JoyButtonReleased", (unsigned long)sf::Event::JoyButtonReleased),
-                luabind::value("JoyMoved", (unsigned long)sf::Event::JoyMoved)
+                luabind::value("JoyButtonPressed", (unsigned long)sf::Event::JoystickButtonPressed),
+                luabind::value("JoyButtonReleased", (unsigned long)sf::Event::JoystickButtonReleased),
+                luabind::value("JoyMoved", (unsigned long)sf::Event::JoystickMoved)
             ],
 
-        luabind::class_<sf::WindowSettings>("WindowSettings")
-            .def(luabind::constructor<>())
-            .def(luabind::constructor<unsigned int>())
-            .def(luabind::constructor<unsigned int, unsigned int>())
-            .def(luabind::constructor<unsigned int, unsigned int, unsigned int>())
-            .def_readwrite("DepthBits", &sf::WindowSettings::DepthBits)
-            .def_readwrite("StencilBits", &sf::WindowSettings::StencilBits)
-            .def_readwrite("AntialiasingLevel", &sf::WindowSettings::AntialiasingLevel),
-
-        luabind::class_<sf::Input>("Input")
-            .def("IsKeyDown", &sf::Input::IsKeyDown)
-            .def("GetMouseX", &sf::Input::GetMouseX)
-            .def("GetMouseY", &sf::Input::GetMouseY)
-            .def("IsMouseButtonDown", &sf::Input::IsMouseButtonDown),
+        luabind::class_<Input>("Input")
+            .def("IsKeyDown", &Input::IsKeyDown)
+            .def("GetMouseX", &Input::GetMouseX)
+            .def("GetMouseY", &Input::GetMouseY)
+            .def("IsMouseButtonDown", &Input::IsMouseButtonDown),
 
         luabind::class_<sf::Window>("Window")
-            .def("Close", &sf::Window::Close)
-            .def("Display", &sf::Window::Display)
-            .def("EnableKeyRepeat", &sf::Window::EnableKeyRepeat)
-            .def("GetEvent", &sf::Window::GetEvent)
-            .def("GetFrameTime", &sf::Window::GetFrameTime)
-            .def("GetHeight", &sf::Window::GetHeight)
-            //.def("GetInput", &sf::Window::GetInput)
-            .def("GetSettings", &sf::Window::GetSettings)
-            .def("GetWidth", &sf::Window::GetWidth)
-            .def("IsOpened", &sf::Window::IsOpened)
-            .def("SetActive", &sf::Window::SetActive)
-            .def("SetCursorPosition", &sf::Window::SetCursorPosition)
-            .def("SetFramerateLimit", &sf::Window::SetFramerateLimit)
-            .def("SetIcon", &sf::Window::SetIcon)
-            .def("SetJoystickThreshold", &sf::Window::SetJoystickThreshold)
-            .def("SetPosition", &sf::Window::SetPosition)
-            .def("SetSize", &sf::Window::SetSize)
-            .def("Show", &sf::Window::Show)
-            .def("ShowMouseCursor", &sf::Window::ShowMouseCursor)
-            .def("UseVerticalSync", &sf::Window::UseVerticalSync)
-            .def("GetInput", &sf::Window::GetInput),
+            .def("Close", &sf::Window::close)
+            .def("Display", &sf::Window::display)
+            .def("EnableKeyRepeat", &sf::Window::setKeyRepeatEnabled)
+            .def("GetEvent", &sf::Window::pollEvent)
+            .def("GetFrameTime", &WindowGetFrameTime)
+            .def("GetSize", &sf::Window::getSize)
+            .def("GetInput", &WindowGetInput)
+            .def("GetSettings", &sf::Window::getSettings)
+            .def("IsOpened", &sf::Window::isOpen)
+            .def("SetActive", &sf::Window::setActive)
+            .def("SetCursorPosition", &WindowSetCursorPosition)
+            .def("SetFramerateLimit", &sf::Window::setFramerateLimit)
+            .def("SetIcon", &sf::Window::setIcon)
+            .def("SetJoystickThreshold", &sf::Window::setJoystickThreshold)
+            .def("SetPosition", &sf::Window::setPosition)
+            .def("SetSize", &sf::Window::setSize)
+            .def("Show", &WindowShow)
+            .def("ShowMouseCursor", &sf::Window::setMouseCursorVisible)
+            .def("GetInput", &WindowGetInput),
 
         luabind::class_<sf::View>("View")
             .def(luabind::constructor<>())
             .def(luabind::constructor<const sf::FloatRect&>())
             .def(luabind::constructor<const sf::Vector2f&, const sf::Vector2f&>())
             //overloaded function
-            .def("SetCenter", (void(sf::View::*)(const sf::Vector2f&))&sf::View::SetCenter)
-            .def("SetCenter", (void(sf::View::*)(float, float))&sf::View::SetCenter)
-            .def("SetHalfSize", (void(sf::View::*)(const sf::Vector2f&))&sf::View::SetHalfSize)
-            .def("SetHalfSize", (void(sf::View::*)(float, float))&sf::View::SetHalfSize)
-            .def("Move", (void(sf::View::*)(const sf::Vector2f&))&sf::View::Move)
-            .def("Move", (void(sf::View::*)(float, float))&sf::View::Move)
-            .def("SetFromRect", &sf::View::SetFromRect)
-            .def("GetCenter", &sf::View::GetCenter)
-            .def("GetHalfSize", &sf::View::GetHalfSize)
-            .def("GetRect", &sf::View::GetRect)
-            .def("Zoom", &sf::View::Zoom),
+            .def("SetCenter", (void(sf::View::*)(const sf::Vector2f&))&sf::View::setCenter)
+            .def("SetCenter", (void(sf::View::*)(float, float))&sf::View::setCenter)
+            .def("SetHalfSize", (void(*)(sf::View&, const sf::Vector2f&))&ViewSetHalfSize)
+            .def("SetHalfSize", (void(*)(sf::View&, float, float))&ViewSetHalfSize)
+            .def("Move", (void(sf::View::*)(const sf::Vector2f&))&sf::View::move)
+            .def("Move", (void(sf::View::*)(float, float))&sf::View::move)
+            .def("SetFromRect", &sf::View::setViewport)
+            .def("GetCenter", &sf::View::getCenter)
+            .def("GetHalfSize", &ViewGetHalfSize)
+			.def("GetRect", &sf::View::getViewport)
+            .def("Zoom", &sf::View::zoom),
 
         luabind::class_<sf::VideoMode>("VideoMode")
             .def(luabind::constructor<>())
             .def(luabind::constructor<unsigned int, unsigned int>())
             .def(luabind::constructor<unsigned int, unsigned int, unsigned int>())
-            .def("IsValid", &sf::VideoMode::IsValid),
+            .def("IsValid", &sf::VideoMode::isValid),
 
         luabind::class_<sf::RenderTarget>("RenderTarget")
-            .def("Clear", &sf::RenderTarget::Clear)
-            .def("Draw", &sf::RenderTarget::Draw)
-            .def("GetHeight", &sf::RenderTarget::GetHeight)
-            .def("SetView", &sf::RenderTarget::SetView)
-            .def("GetView", &sf::RenderTarget::GetView)
-            .def("GetDefaultView", &sf::RenderTarget::GetDefaultView)
-            .def("PreserveOpenGLStates", &sf::RenderTarget::PreserveOpenGLStates),
+            .def("Clear", &sf::RenderTarget::clear)
+            .def("Draw", &RenderTargetDrawDefault)
+            .def("DrawAdditive", &RenderTargetDrawAdditive)
+			.def("DrawAlpha", &RenderTargetDrawAlpha)
+            .def("GetSize", &sf::RenderTarget::getSize)
+            .def("SetView", &sf::RenderTarget::setView)
+            .def("GetView", &sf::RenderTarget::getView)
+            .def("GetDefaultView", &sf::RenderTarget::getDefaultView),
 
         luabind::class_<sf::RenderWindow, luabind::bases<sf::Window, sf::RenderTarget> >("RenderWindow")
             .def(luabind::constructor<>())
             .def(luabind::constructor<sf::VideoMode, const std::string&>())
             .def(luabind::constructor<sf::VideoMode, const std::string&, unsigned long>())
-            .def(luabind::constructor<sf::VideoMode, const std::string&, unsigned long, const sf::WindowSettings&>())
-            .def("Capture", &sf::RenderWindow::Capture)
-            .def("ConvertCoords", &sf::RenderWindow::ConvertCoords)
+            .def("Capture", &sf::RenderWindow::capture)
+            .def("ConvertCoords", (const sf::Vector2f (sf::RenderTarget::*)(const sf::Vector2i&) const) &sf::RenderWindow::convertCoords)
     ];
 }
 

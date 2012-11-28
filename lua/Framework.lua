@@ -10,10 +10,10 @@ local fullView = sf.View()
 local resized = false
 
 local function UpdateViews()
-	local halfSize = sf.Vector2f(window:GetWidth()/2, window:GetHeight()/2)
+	local halfSize = sf.Vector2f(window:GetSize().x/2, window:GetSize().y/2)
 	fullView:SetHalfSize(halfSize)
 	fullView:SetCenter(halfSize)
-	sim:UpdateView(window:GetWidth()/2, window:GetHeight()/2)
+	sim:UpdateView(window:GetSize().x)/2, window:GetSize().y/2)
 	resized = false
 end
 
@@ -28,7 +28,7 @@ function Init()
 	if not sim:Init() then
 		return false
 	end
-	if not ui:Init(window:GetWidth(), window:GetHeight()) then
+	if not ui:Init(window:GetSize().x(), window:GetSize().y) then
 		return false
 	end
 	UpdateViews()
@@ -58,7 +58,7 @@ end
 local function Logic()
 	--  update UI
 	if resized then
-		ui:UpdatePosition(window:GetWidth(), window:GetHeight())
+		ui:UpdatePosition(window:GetSize().x, window:GetSize().y)
 		UpdateViews()
 	end
 	ui:Update(window:GetFrameTime())

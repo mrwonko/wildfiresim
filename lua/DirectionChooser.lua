@@ -15,7 +15,7 @@ function DirectionChooser:New(info)
 	--create objects
 	local text = obj.text or ""
 	obj.circle = sf.Shape.Circle(sf.Vector2f(0,0), obj.radius, obj.color, obj.outline, obj.outlineColor)
-	obj.line = sf.Shape.Line(sf.Vector2f(0, 0), sf.Vector2f(obj.radius, 0), obj.thickness, obj.outlineColor, 0, obj.outlineColor)
+	obj.line = sf.Shape.Line(sf.Vector2f(0, 0), sf.Vector2f(obj.radius, 0), obj.thickness, obj.outlineColor)
 	
 	obj:SetPosition(obj.position)
 	return obj
